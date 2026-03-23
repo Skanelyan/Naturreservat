@@ -124,9 +124,8 @@
 
     document.getElementById("status").textContent = "🔄 Prenumererar på data...";
     onValue(ref(db, "visited"), snapshot => {
-      window._visited = snapshot.val() || {};
+      visited = snapshot.val() || {};
       document.getElementById("status").textContent = "✅ Ansluten – uppdateras i realtid";
-      visited = window._visited;
       render();
     });
   } catch(e) {
@@ -181,7 +180,8 @@ kommuner.forEach(k => { const o = document.createElement("option"); o.value = k;
 
 // ─── STATE ───────────────────────────────────────────────────
 // visited = { nr: true/false }
-let visited = {};
+window.visited = {};
+let visited = window.visited;
 
 
 
