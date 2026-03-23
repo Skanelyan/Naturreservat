@@ -209,6 +209,10 @@ window.logout = function() {
 // ─── FIREBASE ────────────────────────────────────────────────
 function subscribeFirebase() {
   document.getElementById("status").textContent = "Ansluter...";
+  if (!window._firebaseReady) {
+    window.addEventListener("firebase-ready", () => subscribeFirebase());
+    return;
+  }
   window._firebaseOnValue(window._firebaseRef("visited"), snapshot => {
     visited = snapshot.val() || {};
     document.getElementById("status").textContent = "✅ Ansluten – uppdateras i realtid";
@@ -218,10 +222,10 @@ function subscribeFirebase() {
 
 window.toggle = function(nr, cb) {
   const userKey = currentUser === "Jag" ? "jag" : "fru";
-  if (!visited[nr]) visited[nr] = {};
-  visited[nr][userKey] = cb.checked;
-  // Write only this entry to Firebase
-  window._firebaseSet(window._firebaseRef("visited/" + nr), visited[nr]);
+  const current = visited[nr] ? { ...visited[nr] } : {};
+  current[userKey] = cb.checked;
+  visited[nr] = current;
+  window._firebaseSet(window._firebaseRef("visited/" + nr), current);
 };
 
 // ─── RENDER ──────────────────────────────────────────────────
@@ -292,10 +296,7 @@ window.downloadCSV = function() {
   a.click();
 };
 
-// Wait for Firebase before subscribing (only if already logged in)
-window.addEventListener("firebase-ready", () => {
-  if (currentUser) subscribeFirebase();
-});
+
 </script>
 </body>
 </html>
