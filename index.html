@@ -104,12 +104,11 @@
   const firebaseConfig = {
   	apiKey: "AIzaSyD7CVQPSuTxXs8Bmw3vV6YuIcy5TpQDIvc",
   	authDomain: "naturreservat.firebaseapp.com",
- 	  databaseURL: "https://naturreservat-default-rtdb.europe-west1.firebasedatabase.app",
-	  projectId: "naturreservat",
+ 	databaseURL: "https://naturreservat-default-rtdb.europe-west1.firebasedatabase.app",
+	projectId: "naturreservat",
   	storageBucket: "naturreservat.firebasestorage.app",
   	messagingSenderId: "964052674891",
   	appId: "1:964052674891:web:e59422eef01a7eb6be60ce"
-
   };
   // ============================================================
 
@@ -122,11 +121,14 @@
     window._firebaseSet = set;
     window._firebaseRef = (path) => ref(db, path);
     window._firebaseOnValue = onValue;
-    window._firebaseReady = true;
 
-    document.getElementById("status").textContent = "🔄 Skickar firebase-ready...";
-    window.dispatchEvent(new Event("firebase-ready"));
-    document.getElementById("status").textContent = "🔄 Väntar på data...";
+    document.getElementById("status").textContent = "🔄 Prenumererar på data...";
+    onValue(ref(db, "visited"), snapshot => {
+      window._visited = snapshot.val() || {};
+      document.getElementById("status").textContent = "✅ Ansluten – uppdateras i realtid";
+      visited = window._visited;
+      render();
+    });
   } catch(e) {
     document.getElementById("status").textContent = "❌ Firebase-fel: " + e.message;
   }
@@ -183,18 +185,7 @@ let visited = {};
 
 
 
-// ─── FIREBASE ────────────────────────────────────────────────
-function subscribeFirebase() {
-  document.getElementById("status").textContent = "Ansluter...";
-  window._firebaseOnValue(window._firebaseRef("visited"), snapshot => {
-    visited = snapshot.val() || {};
-    document.getElementById("status").textContent = "✅ Ansluten – uppdateras i realtid";
-    render();
-  });
-}
 
-// Vänta på att Firebase-modulen är klar innan vi prenumererar
-window.addEventListener("firebase-ready", () => subscribeFirebase());
 
 window.toggle = function(nr, cb) {
   visited[nr] = cb.checked;
