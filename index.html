@@ -14,15 +14,13 @@
     .subtitle span { color: #2d6a2d; font-weight: bold; }
     .btn { background: #2d6a2d; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; }
     .btn:hover { background: #245524; }
-    .btn.secondary { background: #555; }
-    .btn.secondary:hover { background: #333; }
     .controls { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .controls input, .controls select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; flex: 1; min-width: 160px; }
     .filter-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
     .filter-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
     .count { font-size: 13px; color: #555; margin-bottom: 8px; }
     .table-wrap { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 400px; }
     thead tr { background: #2d6a2d; color: white; }
     th { padding: 10px 12px; text-align: left; white-space: nowrap; }
     th.center, td.center { text-align: center; }
@@ -33,64 +31,46 @@
     td.nr { color: #999; width: 50px; }
     td.namn.struck { text-decoration: line-through; color: #999; }
     td.kommun { color: #446644; }
-    td.who { font-size: 12px; color: #666; }
     input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: #2d6a2d; }
-
-    /* Login screen */
-    #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
-    #login-screen h2 { color: #1a4d1a; font-size: 20px; }
-    .user-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-    .user-btn { padding: 16px 32px; font-size: 18px; border-radius: 12px; border: 2px solid #2d6a2d; background: white; color: #1a4d1a; cursor: pointer; font-weight: bold; transition: all 0.15s; }
-    .user-btn:hover { background: #2d6a2d; color: white; }
-
-    #status { font-size: 12px; color: #888; margin-top: 4px; }
-    .logged-in-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .user-badge { background: #2d6a2d; color: white; border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: bold; }
-
+    #status { font-size: 12px; color: #555; margin-top: 4px; }
     footer { margin-top: 20px; font-size: 12px; color: #aaa; text-align: center; }
-    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 <div class="container">
-
-    <!-- MAIN APP -->
-  <div id="app">
-    <header>
-      <div>
-        <h1>🌿 Naturreservat i Skåne</h1>
-        <p class="subtitle" id="subtitle">Laddar...</p>
-        <div id="status">Ansluter till databasen...</div>
-      </div>
-      <button class="btn" onclick="downloadCSV()">⬇ CSV</button>
-    </header>
-
-    <div class="controls">
-      <input type="text" id="search" placeholder="Sök reservat..." oninput="render()" />
-      <select id="kommunFilter" onchange="render()"></select>
+  <header>
+    <div>
+      <h1>🌿 Naturreservat i Skåne</h1>
+      <p class="subtitle" id="subtitle">Laddar...</p>
+      <div id="status">Ansluter...</div>
     </div>
-    <div class="filter-row">
-      <label><input type="checkbox" id="showOnlyVisited" onchange="render()" /> Visa endast besökta</label>
-      <label><input type="checkbox" id="showOnlyUnvisited" onchange="render()" /> Visa endast obesökta</label>
-    </div>
-    <div class="count" id="count"></div>
+    <button class="btn" onclick="downloadCSV()">⬇ CSV</button>
+  </header>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th class="center">✓</th>
-            <th>Nr</th>
-            <th>Namn</th>
-            <th>Kommun</th>
-  
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <footer>Bockningar sparas i realtid och delas mellan er. Data lagras i Firebase.</footer>
+  <div class="controls">
+    <input type="text" id="search" placeholder="Sök reservat..." oninput="render()" />
+    <select id="kommunFilter" onchange="render()"></select>
   </div>
+  <div class="filter-row">
+    <label><input type="checkbox" id="showOnlyVisited" onchange="render()" /> Visa endast besökta</label>
+    <label><input type="checkbox" id="showOnlyUnvisited" onchange="render()" /> Visa endast obesökta</label>
+  </div>
+  <div class="count" id="count"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="center">✓</th>
+          <th>Nr</th>
+          <th>Namn</th>
+          <th>Kommun</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <footer>Bockningar sparas i realtid via Firebase.</footer>
 </div>
 
 <!-- Firebase SDK -->
@@ -102,29 +82,24 @@
   //  🔧 BYTA UT DESSA VÄRDEN mot dina egna från Firebase Console
   // ============================================================
   const firebaseConfig = {
-  	apiKey: "AIzaSyD7CVQPSuTxXs8Bmw3vV6YuIcy5TpQDIvc",
-  	authDomain: "naturreservat.firebaseapp.com",
- 	databaseURL: "https://naturreservat-default-rtdb.europe-west1.firebasedatabase.app",
-	projectId: "naturreservat",
-  	storageBucket: "naturreservat.firebasestorage.app",
-  	messagingSenderId: "964052674891",
-  	appId: "1:964052674891:web:e59422eef01a7eb6be60ce"
+    apiKey:            "DIN_API_KEY",
+    authDomain:        "DITT_PROJEKT.firebaseapp.com",
+    databaseURL:       "https://DITT_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "DITT_PROJEKT",
+    storageBucket:     "DITT_PROJEKT.appspot.com",
+    messagingSenderId: "DITT_SENDER_ID",
+    appId:             "DITT_APP_ID"
   };
   // ============================================================
 
   try {
-    document.getElementById("status").textContent = "🔄 Initierar Firebase...";
     const app = initializeApp(firebaseConfig);
-    document.getElementById("status").textContent = "🔄 Ansluter till databas...";
-    const db = getDatabase(app);
+    const db  = getDatabase(app);
 
-    window._firebaseSet = set;
-    window._firebaseRef = (path) => ref(db, path);
-    window._firebaseOnValue = onValue;
+    window._set = (path, val) => set(ref(db, path), val);
 
-    document.getElementById("status").textContent = "🔄 Prenumererar på data...";
     onValue(ref(db, "visited"), snapshot => {
-      visited = snapshot.val() || {};
+      window.visited = snapshot.val() || {};
       document.getElementById("status").textContent = "✅ Ansluten – uppdateras i realtid";
       render();
     });
@@ -134,7 +109,6 @@
 </script>
 
 <script>
-// ─── DATA ────────────────────────────────────────────────────
 const DATA = [
   ["Bjuvs kommun","Hallabäckens dalgång"],["Bjuvs kommun","Hjorthagen Wrams Gunnarstorp"],["Bjuvs kommun","Åvarps fälad"],
   ["Bromölla kommun","Åvarp"],["Bromölla kommun","Djupadal"],["Bromölla kommun","Gyetorp"],["Bromölla kommun","Näsums bokskogar"],["Bromölla kommun","Pestbacken"],["Bromölla kommun","Östafors bruk"],
@@ -174,79 +148,65 @@ const DATA = [
 const reservat = DATA.map(([kommun, namn], i) => ({ nr: i + 1, kommun, namn }));
 const kommuner = ["Alla", ...Array.from(new Set(reservat.map(r => r.kommun))).sort()];
 
-// Populate filter
+window.visited = {};
+
+// Populate kommun filter
 const sel = document.getElementById("kommunFilter");
 kommuner.forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = k; sel.appendChild(o); });
 
-// ─── STATE ───────────────────────────────────────────────────
-// visited = { nr: true/false }
-window.visited = {};
-let visited = window.visited;
-
-
-
-
-
 window.toggle = function(nr, cb) {
-  visited[nr] = cb.checked;
-  window._firebaseSet(window._firebaseRef("visited/" + nr), cb.checked);
+  window.visited[nr] = cb.checked;
+  window._set("visited/" + nr, cb.checked);
 };
 
-// ─── RENDER ──────────────────────────────────────────────────
-function render() {
-  const search   = document.getElementById("search").value.toLowerCase();
-  const kommun   = document.getElementById("kommunFilter").value;
-  const onlyV    = document.getElementById("showOnlyVisited").checked;
-  const onlyU    = document.getElementById("showOnlyUnvisited").checked;
-  const userKey  = currentUser === "Jag" ? "jag" : "fru";
+window.render = function() {
+  const search = document.getElementById("search").value.toLowerCase();
+  const kommun = document.getElementById("kommunFilter").value;
+  const onlyV  = document.getElementById("showOnlyVisited").checked;
+  const onlyU  = document.getElementById("showOnlyUnvisited").checked;
 
   const filtered = reservat.filter(r => {
-    const myVisited = !!visited[r.nr];
-    if (onlyV && !myVisited) return false;
-    if (onlyU && myVisited) return false;
+    const v = !!window.visited[r.nr];
+    if (search && !r.namn.toLowerCase().includes(search) && !r.kommun.toLowerCase().includes(search)) return false;
+    if (kommun !== "Alla" && r.kommun !== kommun) return false;
+    if (onlyV && !v) return false;
+    if (onlyU && v) return false;
     return true;
   });
 
-  const totalCount = reservat.filter(r => visited[r.nr]).length;
+  const totalVisited = reservat.filter(r => !!window.visited[r.nr]).length;
   document.getElementById("subtitle").innerHTML =
-    `${reservat.length} reservat &nbsp;·&nbsp; <span>${totalCount} besökta</span>`;
+    `${reservat.length} reservat &nbsp;·&nbsp; <span>${totalVisited} besökta</span>`;
   document.getElementById("count").textContent = `Visar ${filtered.length} av ${reservat.length} reservat`;
 
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#888">Inga reservat hittades</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#888">Inga reservat hittades</td></tr>';
     return;
   }
-
   filtered.forEach((r, i) => {
-    const isVisited = !!visited[r.nr];
+    const v = !!window.visited[r.nr];
     const tr = document.createElement("tr");
-    if (isVisited) tr.classList.add("visited");
+    if (v) tr.classList.add("visited");
     tr.innerHTML = `
-      <td class="center"><input type="checkbox" ${isVisited ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
+      <td class="center"><input type="checkbox" ${v ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
       <td class="nr">${r.nr}</td>
-      <td class="namn ${isVisited ? "struck" : ""}">${r.namn}</td>
+      <td class="namn ${v ? "struck" : ""}">${r.namn}</td>
       <td class="kommun">${r.kommun}</td>`;
     tbody.appendChild(tr);
   });
-}
+};
 
-// ─── CSV ─────────────────────────────────────────────────────
 window.downloadCSV = function() {
   const rows = [["Nr","Namn","Kommun","Besökt"]];
-  reservat.forEach(r => rows.push([
-    r.nr, r.namn, r.kommun,
-    visited[r.nr] ? "Ja" : "Nej"
-  ]));
+  reservat.forEach(r => rows.push([r.nr, r.namn, r.kommun, window.visited[r.nr] ? "Ja" : "Nej"]));
   const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
   a.download = "naturreservat_skane.csv";
   a.click();
 };
-
-
 </script>
 </body>
 </html>
