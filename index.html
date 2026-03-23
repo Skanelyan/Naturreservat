@@ -12,69 +12,137 @@
     h1 { font-size: 22px; color: #1a4d1a; }
     .subtitle { font-size: 13px; color: #555; margin-top: 4px; }
     .subtitle span { color: #2d6a2d; font-weight: bold; }
-    .btn { background: #2d6a2d; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; text-decoration: none; display: inline-block; }
+    .btn { background: #2d6a2d; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; }
     .btn:hover { background: #245524; }
+    .btn.secondary { background: #555; }
+    .btn.secondary:hover { background: #333; }
     .controls { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .controls input, .controls select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; flex: 1; min-width: 160px; }
-    .filter-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .filter-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
     .filter-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
     .count { font-size: 13px; color: #555; margin-bottom: 8px; }
     .table-wrap { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 500px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
     thead tr { background: #2d6a2d; color: white; }
     th { padding: 10px 12px; text-align: left; white-space: nowrap; }
     th.center, td.center { text-align: center; }
-    tbody tr { transition: background 0.15s; }
     tbody tr:nth-child(even) { background: #fff; }
     tbody tr:nth-child(odd) { background: #f9fdf9; }
     tbody tr.visited { background: #e8f5e8 !important; }
     td { padding: 8px 12px; }
     td.nr { color: #999; width: 50px; }
-    td.namn { font-weight: 500; }
     td.namn.struck { text-decoration: line-through; color: #999; }
     td.kommun { color: #446644; }
+    td.who { font-size: 12px; color: #666; }
     input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: #2d6a2d; }
-    .no-results { padding: 24px; text-align: center; color: #888; }
+
+    /* Login screen */
+    #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
+    #login-screen h2 { color: #1a4d1a; font-size: 20px; }
+    .user-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .user-btn { padding: 16px 32px; font-size: 18px; border-radius: 12px; border: 2px solid #2d6a2d; background: white; color: #1a4d1a; cursor: pointer; font-weight: bold; transition: all 0.15s; }
+    .user-btn:hover { background: #2d6a2d; color: white; }
+
+    #status { font-size: 12px; color: #888; margin-top: 4px; }
+    .logged-in-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .user-badge { background: #2d6a2d; color: white; border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: bold; }
+
     footer { margin-top: 20px; font-size: 12px; color: #aaa; text-align: center; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 <div class="container">
-  <header>
-    <div>
-      <h1>🌿 Naturreservat i Skåne</h1>
-      <p class="subtitle" id="subtitle">Laddar...</p>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <h1>🌿 Naturreservat i Skåne</h1>
+    <h2>Vem är du?</h2>
+    <div class="user-btns">
+      <button class="user-btn" onclick="login('Jag')">🧑 Jag</button>
+      <button class="user-btn" onclick="login('Min fru')">👩 Min fru</button>
     </div>
-    <button class="btn" onclick="downloadCSV()">⬇ Ladda ner CSV</button>
-  </header>
+  </div>
 
-  <div class="controls">
-    <input type="text" id="search" placeholder="Sök reservat..." oninput="render()" />
-    <select id="kommunFilter" onchange="render()"></select>
-  </div>
-  <div class="filter-row">
-    <label><input type="checkbox" id="showOnlyVisited" onchange="render()" /> Visa endast besökta</label>
-    <label><input type="checkbox" id="showOnlyUnvisited" onchange="render()" /> Visa endast obesökta</label>
-  </div>
-  <div class="count" id="count"></div>
+  <!-- MAIN APP -->
+  <div id="app" class="hidden">
+    <header>
+      <div>
+        <h1>🌿 Naturreservat i Skåne</h1>
+        <p class="subtitle" id="subtitle">Laddar...</p>
+        <div id="status">Ansluter till databasen...</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div class="logged-in-bar">
+          <span id="user-badge" class="user-badge"></span>
+          <button class="btn secondary" onclick="logout()">Byt användare</button>
+        </div>
+        <button class="btn" onclick="downloadCSV()">⬇ CSV</button>
+      </div>
+    </header>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th class="center">✓</th>
-          <th>Nr</th>
-          <th>Namn</th>
-          <th>Kommun</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <div class="controls">
+      <input type="text" id="search" placeholder="Sök reservat..." oninput="render()" />
+      <select id="kommunFilter" onchange="render()"></select>
+    </div>
+    <div class="filter-row">
+      <label><input type="checkbox" id="showOnlyVisited" onchange="render()" /> Visa endast besökta</label>
+      <label><input type="checkbox" id="showOnlyUnvisited" onchange="render()" /> Visa endast obesökta</label>
+    </div>
+    <div class="count" id="count"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="center">✓</th>
+            <th>Nr</th>
+            <th>Namn</th>
+            <th>Kommun</th>
+            <th>Besökt av</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <footer>Bockningar sparas i realtid och delas mellan er. Data lagras i Firebase.</footer>
   </div>
-  <footer>Data baserad på Länsstyrelsen Skåne &amp; Wikipedia. Bockningar sparas automatiskt i webbläsaren.</footer>
 </div>
 
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ============================================================
+  //  🔧 BYTA UT DESSA VÄRDEN mot dina egna från Firebase Console
+  // ============================================================
+  const firebaseConfig = {
+    apiKey:            "AIzaSyD7CVQPSuTxXs8Bmw3vV6YuIcy5TpQDIvc",
+    authDomain:        "naturreservat.firebaseapp.com",
+    databaseURL:       "https://DITT_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "naturreservat",
+    storageBucket:     "naturreservat.firebasestorage.app",
+    messagingSenderId: "964052674891",
+    appId:             "1:964052674891:web:e59422eef01a7eb6be60ce"
+  };
+  // ============================================================
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // Exponera till globalt scope så övrig kod når dem
+  window._firebaseSet = set;
+  window._firebaseRef = (path) => ref(db, path);
+  window._firebaseOnValue = onValue;
+  window._firebaseReady = true;
+
+  // Starta appen när Firebase är redo
+  window.dispatchEvent(new Event("firebase-ready"));
+</script>
+
 <script>
+// ─── DATA ────────────────────────────────────────────────────
 const DATA = [
   ["Bjuvs kommun","Hallabäckens dalgång"],["Bjuvs kommun","Hjorthagen Wrams Gunnarstorp"],["Bjuvs kommun","Åvarps fälad"],
   ["Bromölla kommun","Åvarp"],["Bromölla kommun","Djupadal"],["Bromölla kommun","Gyetorp"],["Bromölla kommun","Näsums bokskogar"],["Bromölla kommun","Pestbacken"],["Bromölla kommun","Östafors bruk"],
@@ -118,68 +186,116 @@ const kommuner = ["Alla", ...Array.from(new Set(reservat.map(r => r.kommun))).so
 const sel = document.getElementById("kommunFilter");
 kommuner.forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = k; sel.appendChild(o); });
 
-// Load visited from localStorage
+// ─── STATE ───────────────────────────────────────────────────
+let currentUser = null;
+// visited = { nr: { jag: true/false, fru: true/false } }
 let visited = {};
-try { visited = JSON.parse(localStorage.getItem("visited_skane") || "{}"); } catch(e) {}
 
-function saveVisited() {
-  try { localStorage.setItem("visited_skane", JSON.stringify(visited)); } catch(e) {}
+// ─── LOGIN ───────────────────────────────────────────────────
+window.login = function(user) {
+  currentUser = user;
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("user-badge").textContent = user === "Jag" ? "🧑 Jag" : "👩 Min fru";
+  subscribeFirebase();
+};
+
+window.logout = function() {
+  currentUser = null;
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+};
+
+// ─── FIREBASE ────────────────────────────────────────────────
+function subscribeFirebase() {
+  document.getElementById("status").textContent = "Ansluter...";
+  window._firebaseOnValue(window._firebaseRef("visited"), snapshot => {
+    visited = snapshot.val() || {};
+    document.getElementById("status").textContent = "✅ Ansluten – uppdateras i realtid";
+    render();
+  });
 }
 
+window.toggle = function(nr, cb) {
+  const userKey = currentUser === "Jag" ? "jag" : "fru";
+  if (!visited[nr]) visited[nr] = {};
+  visited[nr][userKey] = cb.checked;
+  // Write only this entry to Firebase
+  window._firebaseSet(window._firebaseRef("visited/" + nr), visited[nr]);
+};
+
+// ─── RENDER ──────────────────────────────────────────────────
 function render() {
-  const search = document.getElementById("search").value.toLowerCase();
-  const kommun = document.getElementById("kommunFilter").value;
-  const onlyVisited = document.getElementById("showOnlyVisited").checked;
-  const onlyUnvisited = document.getElementById("showOnlyUnvisited").checked;
+  const search   = document.getElementById("search").value.toLowerCase();
+  const kommun   = document.getElementById("kommunFilter").value;
+  const onlyV    = document.getElementById("showOnlyVisited").checked;
+  const onlyU    = document.getElementById("showOnlyUnvisited").checked;
+  const userKey  = currentUser === "Jag" ? "jag" : "fru";
 
   const filtered = reservat.filter(r => {
+    const myVisited = visited[r.nr]?.[userKey];
+    const anyVisited = visited[r.nr]?.jag || visited[r.nr]?.fru;
     if (search && !r.namn.toLowerCase().includes(search) && !r.kommun.toLowerCase().includes(search)) return false;
     if (kommun !== "Alla" && r.kommun !== kommun) return false;
-    if (onlyVisited && !visited[r.nr]) return false;
-    if (onlyUnvisited && visited[r.nr]) return false;
+    if (onlyV && !myVisited) return false;
+    if (onlyU && myVisited) return false;
     return true;
   });
 
-  const visitedCount = Object.values(visited).filter(Boolean).length;
+  const myCount    = reservat.filter(r => visited[r.nr]?.[userKey]).length;
+  const totalCount = reservat.filter(r => visited[r.nr]?.jag || visited[r.nr]?.fru).length;
   document.getElementById("subtitle").innerHTML =
-    `${reservat.length} reservat i ${kommuner.length - 1} kommuner &nbsp;·&nbsp; <span>${visitedCount} besökta</span>`;
+    `${reservat.length} reservat &nbsp;·&nbsp; <span>${myCount} besökta av mig</span> &nbsp;·&nbsp; ${totalCount} totalt besökta`;
   document.getElementById("count").textContent = `Visar ${filtered.length} av ${reservat.length} reservat`;
 
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="no-results">Inga reservat hittades</td></tr>';
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#888">Inga reservat hittades</td></tr>';
     return;
   }
-  filtered.forEach(r => {
+
+  filtered.forEach((r, i) => {
+    const myVisited  = !!visited[r.nr]?.[userKey];
+    const jagV   = !!visited[r.nr]?.jag;
+    const fruV   = !!visited[r.nr]?.fru;
+    const anyV   = jagV || fruV;
+
+    const whoArr = [];
+    if (jagV) whoArr.push("🧑 Jag");
+    if (fruV) whoArr.push("👩 Min fru");
+
     const tr = document.createElement("tr");
-    if (visited[r.nr]) tr.classList.add("visited");
+    if (anyV) tr.classList.add("visited");
     tr.innerHTML = `
-      <td class="center"><input type="checkbox" ${visited[r.nr] ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
+      <td class="center"><input type="checkbox" ${myVisited ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
       <td class="nr">${r.nr}</td>
-      <td class="namn ${visited[r.nr] ? "struck" : ""}">${r.namn}</td>
-      <td class="kommun">${r.kommun}</td>`;
+      <td class="namn ${myVisited ? "struck" : ""}">${r.namn}</td>
+      <td class="kommun">${r.kommun}</td>
+      <td class="who">${whoArr.join(", ")}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-function toggle(nr, cb) {
-  visited[nr] = cb.checked;
-  saveVisited();
-  render();
-}
-
-function downloadCSV() {
-  const rows = [["Nr","Namn","Kommun","Besökt"]];
-  reservat.forEach(r => rows.push([r.nr, r.namn, r.kommun, visited[r.nr] ? "Ja" : "Nej"]));
+// ─── CSV ─────────────────────────────────────────────────────
+window.downloadCSV = function() {
+  const rows = [["Nr","Namn","Kommun","Besökt av Jag","Besökt av Min fru"]];
+  reservat.forEach(r => rows.push([
+    r.nr, r.namn, r.kommun,
+    visited[r.nr]?.jag ? "Ja" : "Nej",
+    visited[r.nr]?.fru ? "Ja" : "Nej"
+  ]));
   const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
   a.download = "naturreservat_skane.csv";
   a.click();
-}
+};
 
-render();
+// Wait for Firebase before subscribing (only if already logged in)
+window.addEventListener("firebase-ready", () => {
+  if (currentUser) subscribeFirebase();
+});
 </script>
 </body>
 </html>
