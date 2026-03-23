@@ -189,10 +189,11 @@ window.render = function() {
     const v = !!window.visited[r.nr];
     const tr = document.createElement("tr");
     if (v) tr.classList.add("visited");
+    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(r.namn + " naturreservat " + r.kommun + " Sverige")}`;
     tr.innerHTML = `
       <td class="center"><input type="checkbox" ${v ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
       <td class="nr">${r.nr}</td>
-      <td class="namn ${v ? "struck" : ""}">${r.namn}</td>
+      <td class="namn ${v ? "struck" : ""}"><a href="${mapsUrl}" target="_blank" style="color:inherit;text-decoration:none;">📍 ${r.namn}</a></td>
       <td class="kommun">${r.kommun}</td>`;
     tbody.appendChild(tr);
   });
