@@ -54,31 +54,15 @@
 <body>
 <div class="container">
 
-  <!-- LOGIN -->
-  <div id="login-screen">
-    <h1>🌿 Naturreservat i Skåne</h1>
-    <h2>Vem är du?</h2>
-    <div class="user-btns">
-      <button class="user-btn" onclick="login('Tjabba')">🧑 Tjabba</button>
-      <button class="user-btn" onclick="login('Veka')">👩 Veka</button>
-    </div>
-  </div>
-
-  <!-- MAIN APP -->
-  <div id="app" class="hidden">
+    <!-- MAIN APP -->
+  <div id="app">
     <header>
       <div>
         <h1>🌿 Naturreservat i Skåne</h1>
         <p class="subtitle" id="subtitle">Laddar...</p>
         <div id="status">Ansluter till databasen...</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <div class="logged-in-bar">
-          <span id="user-badge" class="user-badge"></span>
-          <button class="btn secondary" onclick="logout()">Byt användare</button>
-        </div>
-        <button class="btn" onclick="downloadCSV()">⬇ CSV</button>
-      </div>
+      <button class="btn" onclick="downloadCSV()">⬇ CSV</button>
     </header>
 
     <div class="controls">
@@ -99,7 +83,7 @@
             <th>Nr</th>
             <th>Namn</th>
             <th>Kommun</th>
-            <th>Besökt av</th>
+  
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -118,13 +102,12 @@
   //  🔧 BYTA UT DESSA VÄRDEN mot dina egna från Firebase Console
   // ============================================================
   const firebaseConfig = {
-    apiKey:            "AIzaSyD7CVQPSuTxXs8Bmw3vV6YuIcy5TpQDIvc",
-    authDomain:        "naturreservat.firebaseapp.com",
-    databaseURL:       "https://DITT_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId:         "naturreservat",
-    storageBucket:     "naturreservat.firebasestorage.app",
-    messagingSenderId: "964052674891",
-    appId:             "1:964052674891:web:e59422eef01a7eb6be60ce"
+  	apiKey: "AIzaSyD7CVQPSuTxXs8Bmw3vV6YuIcy5TpQDIvc",
+  	authDomain: "naturreservat.firebaseapp.com",
+ 	projectId: "naturreservat",
+  	storageBucket: "naturreservat.firebasestorage.app",
+  	messagingSenderId: "964052674891",
+  	appId: "1:964052674891:web:e59422eef01a7eb6be60ce"
   };
   // ============================================================
 
@@ -187,24 +170,10 @@ const sel = document.getElementById("kommunFilter");
 kommuner.forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = k; sel.appendChild(o); });
 
 // ─── STATE ───────────────────────────────────────────────────
-let currentUser = null;
-// visited = { nr: { jag: true/false, fru: true/false } }
+// visited = { nr: true/false }
 let visited = {};
 
-// ─── LOGIN ───────────────────────────────────────────────────
-window.login = function(user) {
-  currentUser = user;
-  document.getElementById("login-screen").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-  document.getElementById("user-badge").textContent = user === "Jag" ? "🧑 Jag" : "👩 Min fru";
-  subscribeFirebase();
-};
 
-window.logout = function() {
-  currentUser = null;
-  document.getElementById("app").classList.add("hidden");
-  document.getElementById("login-screen").classList.remove("hidden");
-};
 
 // ─── FIREBASE ────────────────────────────────────────────────
 function subscribeFirebase() {
@@ -220,12 +189,11 @@ function subscribeFirebase() {
   });
 }
 
+subscribeFirebase();
+
 window.toggle = function(nr, cb) {
-  const userKey = currentUser === "Jag" ? "jag" : "fru";
-  const current = visited[nr] ? { ...visited[nr] } : {};
-  current[userKey] = cb.checked;
-  visited[nr] = current;
-  window._firebaseSet(window._firebaseRef("visited/" + nr), current);
+  visited[nr] = cb.checked;
+  window._firebaseSet(window._firebaseRef("visited/" + nr), cb.checked);
 };
 
 // ─── RENDER ──────────────────────────────────────────────────
@@ -237,19 +205,15 @@ function render() {
   const userKey  = currentUser === "Jag" ? "jag" : "fru";
 
   const filtered = reservat.filter(r => {
-    const myVisited = visited[r.nr]?.[userKey];
-    const anyVisited = visited[r.nr]?.jag || visited[r.nr]?.fru;
-    if (search && !r.namn.toLowerCase().includes(search) && !r.kommun.toLowerCase().includes(search)) return false;
-    if (kommun !== "Alla" && r.kommun !== kommun) return false;
+    const myVisited = !!visited[r.nr];
     if (onlyV && !myVisited) return false;
     if (onlyU && myVisited) return false;
     return true;
   });
 
-  const myCount    = reservat.filter(r => visited[r.nr]?.[userKey]).length;
-  const totalCount = reservat.filter(r => visited[r.nr]?.jag || visited[r.nr]?.fru).length;
+  const totalCount = reservat.filter(r => visited[r.nr]).length;
   document.getElementById("subtitle").innerHTML =
-    `${reservat.length} reservat &nbsp;·&nbsp; <span>${myCount} besökta av mig</span> &nbsp;·&nbsp; ${totalCount} totalt besökta`;
+    `${reservat.length} reservat &nbsp;·&nbsp; <span>${totalCount} besökta</span>`;
   document.getElementById("count").textContent = `Visar ${filtered.length} av ${reservat.length} reservat`;
 
   const tbody = document.getElementById("tbody");
@@ -260,34 +224,24 @@ function render() {
   }
 
   filtered.forEach((r, i) => {
-    const myVisited  = !!visited[r.nr]?.[userKey];
-    const jagV   = !!visited[r.nr]?.jag;
-    const fruV   = !!visited[r.nr]?.fru;
-    const anyV   = jagV || fruV;
-
-    const whoArr = [];
-    if (jagV) whoArr.push("🧑 Jag");
-    if (fruV) whoArr.push("👩 Min fru");
-
+    const isVisited = !!visited[r.nr];
     const tr = document.createElement("tr");
-    if (anyV) tr.classList.add("visited");
+    if (isVisited) tr.classList.add("visited");
     tr.innerHTML = `
-      <td class="center"><input type="checkbox" ${myVisited ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
+      <td class="center"><input type="checkbox" ${isVisited ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
       <td class="nr">${r.nr}</td>
-      <td class="namn ${myVisited ? "struck" : ""}">${r.namn}</td>
-      <td class="kommun">${r.kommun}</td>
-      <td class="who">${whoArr.join(", ")}</td>`;
+      <td class="namn ${isVisited ? "struck" : ""}">${r.namn}</td>
+      <td class="kommun">${r.kommun}</td>`;
     tbody.appendChild(tr);
   });
 }
 
 // ─── CSV ─────────────────────────────────────────────────────
 window.downloadCSV = function() {
-  const rows = [["Nr","Namn","Kommun","Besökt av Jag","Besökt av Min fru"]];
+  const rows = [["Nr","Namn","Kommun","Besökt"]];
   reservat.forEach(r => rows.push([
     r.nr, r.namn, r.kommun,
-    visited[r.nr]?.jag ? "Ja" : "Nej",
-    visited[r.nr]?.fru ? "Ja" : "Nej"
+    visited[r.nr] ? "Ja" : "Nej"
   ]));
   const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\n");
   const a = document.createElement("a");
