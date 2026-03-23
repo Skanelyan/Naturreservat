@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Naturreservat i Skåne</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f4f9f4; color: #222; padding: 24px 16px; }
+    .container { max-width: 920px; margin: 0 auto; }
+    header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    h1 { font-size: 22px; color: #1a4d1a; }
+    .subtitle { font-size: 13px; color: #555; margin-top: 4px; }
+    .subtitle span { color: #2d6a2d; font-weight: bold; }
+    .btn { background: #2d6a2d; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; text-decoration: none; display: inline-block; }
+    .btn:hover { background: #245524; }
+    .controls { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .controls input, .controls select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; flex: 1; min-width: 160px; }
+    .filter-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .filter-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+    .count { font-size: 13px; color: #555; margin-bottom: 8px; }
+    .table-wrap { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 500px; }
+    thead tr { background: #2d6a2d; color: white; }
+    th { padding: 10px 12px; text-align: left; white-space: nowrap; }
+    th.center, td.center { text-align: center; }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:nth-child(even) { background: #fff; }
+    tbody tr:nth-child(odd) { background: #f9fdf9; }
+    tbody tr.visited { background: #e8f5e8 !important; }
+    td { padding: 8px 12px; }
+    td.nr { color: #999; width: 50px; }
+    td.namn { font-weight: 500; }
+    td.namn.struck { text-decoration: line-through; color: #999; }
+    td.kommun { color: #446644; }
+    input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: #2d6a2d; }
+    .no-results { padding: 24px; text-align: center; color: #888; }
+    footer { margin-top: 20px; font-size: 12px; color: #aaa; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>🌿 Naturreservat i Skåne</h1>
+      <p class="subtitle" id="subtitle">Laddar...</p>
+    </div>
+    <button class="btn" onclick="downloadCSV()">⬇ Ladda ner CSV</button>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Sök reservat..." oninput="render()" />
+    <select id="kommunFilter" onchange="render()"></select>
+  </div>
+  <div class="filter-row">
+    <label><input type="checkbox" id="showOnlyVisited" onchange="render()" /> Visa endast besökta</label>
+    <label><input type="checkbox" id="showOnlyUnvisited" onchange="render()" /> Visa endast obesökta</label>
+  </div>
+  <div class="count" id="count"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="center">✓</th>
+          <th>Nr</th>
+          <th>Namn</th>
+          <th>Kommun</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <footer>Data baserad på Länsstyrelsen Skåne &amp; Wikipedia. Bockningar sparas automatiskt i webbläsaren.</footer>
+</div>
+
+<script>
+const DATA = [
+  ["Bjuvs kommun","Hallabäckens dalgång"],["Bjuvs kommun","Hjorthagen Wrams Gunnarstorp"],["Bjuvs kommun","Åvarps fälad"],
+  ["Bromölla kommun","Åvarp"],["Bromölla kommun","Djupadal"],["Bromölla kommun","Gyetorp"],["Bromölla kommun","Näsums bokskogar"],["Bromölla kommun","Pestbacken"],["Bromölla kommun","Östafors bruk"],
+  ["Burlövs kommun","Södra Lommabuktens naturreservat"],
+  ["Båstads kommun","Axeltorps skogar"],["Båstads kommun","Bjärekustens naturreservat"],["Båstads kommun","Englandsdals naturreservat"],["Båstads kommun","Grevie åsars naturreservat"],["Båstads kommun","Hallands Väderö"],["Båstads kommun","Hallandsås nordsluttning"],["Båstads kommun","Haralds ängar"],["Båstads kommun","Lya ljunghed med omgivningar"],["Båstads kommun","Lyadalens naturreservat"],["Båstads kommun","Severtorp"],["Båstads kommun","Skånska Kattegatt"],["Båstads kommun","Stora Hults fälad"],["Båstads kommun","Stora Hults strand"],["Båstads kommun","Södra Bjärekusten"],["Båstads kommun","Täppesås naturreservat"],
+  ["Eslövs kommun","Abullahagens naturreservat"],["Eslövs kommun","Billingemölla naturreservat"],["Eslövs kommun","Borstbäckens naturreservat"],["Eslövs kommun","Bosarps jär"],["Eslövs kommun","Eslövs allmänning"],["Eslövs kommun","Flyinge ängar"],
+  ["Helsingborgs kommun","Allerums mosse"],["Helsingborgs kommun","Björka fälads naturreservat"],["Helsingborgs kommun","Björka skogs naturreservat"],["Helsingborgs kommun","Domsten–Viken kustlandskap"],["Helsingborgs kommun","Görslövs mosse"],["Helsingborgs kommun","Helsingborg Skäret"],["Helsingborgs kommun","Hjälmshults naturreservat"],["Helsingborgs kommun","Hittarp–Laröds naturreservat"],["Helsingborgs kommun","Kärralunds naturreservat"],["Helsingborgs kommun","Ödåkra myr"],["Helsingborgs kommun","Pålsjöskogen"],["Helsingborgs kommun","Rååns nedre del"],["Helsingborgs kommun","Rössjöholms naturreservat"],["Helsingborgs kommun","Rössjön"],["Helsingborgs kommun","Rydebäcks naturreservat"],["Helsingborgs kommun","Sofiero slottspark"],["Helsingborgs kommun","Torneryds mosse"],["Helsingborgs kommun","Trollskogen naturreservat"],["Helsingborgs kommun","Ättekulla naturreservat"],["Helsingborgs kommun","Ängelholms strandskog"],
+  ["Hässleholms kommun","Badebodaåsen"],["Hässleholms kommun","Finjasjöns naturreservat"],["Hässleholms kommun","Hovdalaområdet"],["Hässleholms kommun","Ivö klack"],["Hässleholms kommun","Järnbodaåsen"],["Hässleholms kommun","Kärlingesjön"],["Hässleholms kommun","Mölleröds naturreservat"],["Hässleholms kommun","Rågens backe"],["Hässleholms kommun","Röke å"],["Hässleholms kommun","Stoby ängar"],["Hässleholms kommun","Tolångaskogen"],["Hässleholms kommun","Vittsjön"],["Hässleholms kommun","Öja hällar"],
+  ["Höganäs kommun","Arild–Strandbaden"],["Höganäs kommun","Brunnby–Mölle"],["Höganäs kommun","Eriksberg"],["Höganäs kommun","Fyruddens naturreservat"],["Höganäs kommun","Himmelstorps naturreservat"],["Höganäs kommun","Josefinelust"],["Höganäs kommun","Krapperups naturreservat"],["Höganäs kommun","Kullabergs naturreservat"],["Höganäs kommun","Lerhamns ängar"],["Höganäs kommun","Ljunghusen naturreservat"],["Höganäs kommun","Magnehills naturreservat"],["Höganäs kommun","Möllehassle"],["Höganäs kommun","Nyhamnsläge–Domstenen"],["Höganäs kommun","Skäret"],["Höganäs kommun","Ödmansbergs naturreservat"],
+  ["Hörby kommun","Bökebergets naturreservat"],["Hörby kommun","Djurhusen"],["Hörby kommun","Fulltofta naturreservat"],["Hörby kommun","Gundrastorps naturreservat"],["Hörby kommun","Hörby mosse"],["Hörby kommun","Kvesarumssjön"],["Hörby kommun","Lindholmens naturreservat"],["Hörby kommun","Mölleröds flygsandsfält"],["Hörby kommun","Norrvidinge"],["Hörby kommun","Ringsjöns naturreservat"],["Hörby kommun","Saxån–Braån"],["Hörby kommun","Sätoftasjön"],
+  ["Höörs kommun","Bälteberga naturreservat"],["Höörs kommun","Frostavallen"],["Höörs kommun","Häckberga naturreservat"],["Höörs kommun","Höör–Tjörnarp"],["Höörs kommun","Hörups naturreservat"],["Höörs kommun","Klöva hallar"],["Höörs kommun","Knivsåsen"],["Höörs kommun","Knivsås–Borelund"],["Höörs kommun","Konga naturreservat"],["Höörs kommun","Lärkesholms naturreservat"],["Höörs kommun","Risinge backar"],["Höörs kommun","Skogsmossen"],["Höörs kommun","Svenshögsmossen"],["Höörs kommun","Tirupdalens naturreservat"],["Höörs kommun","Trollaberg"],["Höörs kommun","Vitåbäckens naturreservat"],
+  ["Klippans kommun","Djupadalsravinen"],["Klippans kommun","Herrevads kloster"],["Klippans kommun","Klippans naturreservat"],["Klippans kommun","Ljungbyhedsskogen"],["Klippans kommun","Söderåsen nationalpark (del)"],["Klippans kommun","Väsby naturreservat"],
+  ["Kristianstads kommun","Araslövs naturreservat"],["Kristianstads kommun","Djurröds naturreservat"],["Kristianstads kommun","Everöds naturreservat"],["Kristianstads kommun","Färlövs naturreservat"],["Kristianstads kommun","Gärds–Köpinge mosse"],["Kristianstads kommun","Håslövs ängar"],["Kristianstads kommun","Håslövs mosse"],["Kristianstads kommun","Immeln"],["Kristianstads kommun","Ivenäs"],["Kristianstads kommun","Ivö klack"],["Kristianstads kommun","Ivösjön"],["Kristianstads kommun","Karsholms naturreservat"],["Kristianstads kommun","Lingenäsudden"],["Kristianstads kommun","Nosabysjön"],["Kristianstads kommun","Rössjöns naturreservat"],["Kristianstads kommun","Råbelövssjön"],["Kristianstads kommun","Skepparpsån"],["Kristianstads kommun","Torsebro"],["Kristianstads kommun","Tosteberga ängar"],["Kristianstads kommun","Tränebergsdalen"],["Kristianstads kommun","Verkeåns naturreservat"],["Kristianstads kommun","Viby mosse"],["Kristianstads kommun","Äspet naturreservat"],["Kristianstads kommun","Östra Ringsjön"],
+  ["Kävlinge kommun","Barsebäckshamn–Löddesborg"],["Kävlinge kommun","Dagstorps mosse"],["Kävlinge kommun","Furulunds mosse"],["Kävlinge kommun","Kävlingeåns naturreservat"],["Kävlinge kommun","Löddeåns naturreservat"],["Kävlinge kommun","Sandby mosse"],
+  ["Landskrona kommun","Borstahusen"],["Landskrona kommun","Eriksberg–Lagunerna"],["Landskrona kommun","Glumslövs backar"],["Landskrona kommun","Häljarpsslätten"],["Landskrona kommun","Saxån–Braån (del)"],["Landskrona kommun","Sandhammarens naturreservat"],["Landskrona kommun","Ven naturreservat"],
+  ["Lomma kommun","Bjärred–Borgeby"],["Lomma kommun","Ekeskogens naturreservat"],["Lomma kommun","Fjelie mosse"],["Lomma kommun","Haboljungs naturreservat"],["Lomma kommun","Hjälmshults naturreservat"],["Lomma kommun","Kvarnbyns naturreservat"],["Lomma kommun","Lommabukten"],["Lomma kommun","Lomma kalkbrott"],["Lomma kommun","Lövholms naturreservat"],["Lomma kommun","Önnerupsängen"],["Lomma kommun","Södra Lommabuktens naturreservat"],["Lomma kommun","Väla myr"],
+  ["Lunds kommun","Boisens naturreservat"],["Lunds kommun","Dalby Söderskog nationalpark"],["Lunds kommun","Flackarp–Trolleberg"],["Lunds kommun","Häckeberga–Skoggård"],["Lunds kommun","Häckeberga naturvårdsområde"],["Lunds kommun","Krankesjön"],["Lunds kommun","Lagmanslätten"],["Lunds kommun","Lunds naturreservat–Höje å"],["Lunds kommun","Pålsjöskogen (del)"],["Lunds kommun","Rinnebäcksravinen"],["Lunds kommun","Sjöbeckaskogen"],["Lunds kommun","Skrylle naturreservat"],["Lunds kommun","Stångby mosse"],["Lunds kommun","Värpinge naturreservat"],["Lunds kommun","Yddingesjön"],["Lunds kommun","Yttre Ringsjöns naturreservat"],["Lunds kommun","Örtoftasjön"],
+  ["Malmö kommun","Bunkeflo strandängar"],["Malmö kommun","Husie mosse"],["Malmö kommun","Klagshamnsudden"],["Malmö kommun","Limhamns kalkbrott"],["Malmö kommun","Nydala naturreservat"],
+  ["Osby kommun","Agbo naturreservat"],["Osby kommun","Frösakull"],["Osby kommun","Göingeåns naturreservat"],["Osby kommun","Hörlingebergsmossen"],["Osby kommun","Loshults naturreservat"],["Osby kommun","Nosabysjöns naturreservat"],["Osby kommun","Vittsjön naturreservat"],
+  ["Perstorps kommun","Hallens naturreservat"],["Perstorps kommun","Perstorps naturreservat"],["Perstorps kommun","Skogsgölen"],
+  ["Simrishamns kommun","Brösarps backar"],["Simrishamns kommun","Bussjöänge"],["Simrishamns kommun","Ericsberg naturreservat"],["Simrishamns kommun","Hanö naturreservat"],["Simrishamns kommun","Kivikshamn"],["Simrishamns kommun","Kåseberga naturreservat"],["Simrishamns kommun","Morups tånge"],["Simrishamns kommun","Rörum–Baskemölla"],["Simrishamns kommun","Stiby backar"],["Simrishamns kommun","Stenshuvud nationalpark"],["Simrishamns kommun","Tosterups naturreservat"],["Simrishamns kommun","Verkeån naturreservat II"],["Simrishamns kommun","Vik–Vitaby"],
+  ["Sjöbo kommun","Björkholms naturreservat"],["Sjöbo kommun","Drakamöllans naturreservat"],["Sjöbo kommun","Gyinge naturreservat"],["Sjöbo kommun","Navröd naturreservat"],["Sjöbo kommun","Sjöbo mosse"],["Sjöbo kommun","Tomelilla ängar"],["Sjöbo kommun","Tranebäcksravinen"],["Sjöbo kommun","Vombs ängar"],
+  ["Skurups kommun","Abbekås–Höllviken strandhed"],["Skurups kommun","Hyltebergs naturreservat"],["Skurups kommun","Skateholm–Foteviken"],["Skurups kommun","Smygehuk naturreservat"],
+  ["Staffanstorps kommun","Flackarp–Trolleberg (del)"],["Staffanstorps kommun","Husie mosse (del)"],
+  ["Svalövs kommun","Billingåsen naturreservat"],["Svalövs kommun","Ekeby mosse"],["Svalövs kommun","Görarp–Assartorp"],["Svalövs kommun","Kvistofta naturreservat"],["Svalövs kommun","Säby naturreservat"],
+  ["Svedala kommun","Arriesjön–Ramsa"],["Svedala kommun","Börringe kloster"],["Svedala kommun","Hyby lundar"],["Svedala kommun","Svedala åar"],["Svedala kommun","Törringelund"],
+  ["Tomelilla kommun","Forsakar naturreservat"],["Tomelilla kommun","Gladsax naturreservat"],["Tomelilla kommun","Nybrostrand naturreservat"],["Tomelilla kommun","Tosterups naturreservat"],["Tomelilla kommun","Vrams naturreservat"],
+  ["Trelleborgs kommun","Abbekås–Höllviken strandhed"],["Trelleborgs kommun","Foteviken naturreservat"],["Trelleborgs kommun","Kämpinge strandhed"],["Trelleborgs kommun","Sandskogen naturreservat"],["Trelleborgs kommun","Smygehuk"],["Trelleborgs kommun","Östra Torp naturreservat"],
+  ["Vellinge kommun","Arriesjöns naturreservat"],["Vellinge kommun","Falsterbo naturreservat"],["Vellinge kommun","Falsterbo strandbad"],["Vellinge kommun","Foteviken"],["Vellinge kommun","Kämpinge–Höllviken"],["Vellinge kommun","Ljunghusens naturreservat"],["Vellinge kommun","Måkläppen naturreservat"],["Vellinge kommun","Norra Hällarp naturreservat"],["Vellinge kommun","Skanörs ljung"],["Vellinge kommun","Skanörs revlar"],
+  ["Ystads kommun","Backakra"],["Ystads kommun","Bussjöängar"],["Ystads kommun","Högestads naturreservat"],["Ystads kommun","Jordhamra naturreservat"],["Ystads kommun","Löderups strandbad"],["Ystads kommun","Norra Sandskogen"],["Ystads kommun","Sandhammarens naturreservat"],["Ystads kommun","Snogeholms naturreservat"],["Ystads kommun","Tulstorps naturreservat"],["Ystads kommun","Ystads sandskog"],
+  ["Åstorps kommun","Börsemölla naturreservat"],["Åstorps kommun","Nyvångasjön"],
+  ["Ängelholms kommun","Ängelholms strandskog"],["Ängelholms kommun","Forsnäs naturreservat"],["Ängelholms kommun","Magnarp naturreservat"],["Ängelholms kommun","Rönneå naturreservat"],["Ängelholms kommun","Skälderviken"],["Ängelholms kommun","Vegeåns naturreservat"],
+  ["Örkelljunga kommun","Gylleboskogens naturreservat"],["Örkelljunga kommun","Kvesarumsmossen"],["Örkelljunga kommun","Söderåsen nationalpark (del)"],
+  ["Östra Göinge kommun","Finjasjön naturreservat"],["Östra Göinge kommun","Glimåkra naturreservat"],["Östra Göinge kommun","Göingeåns naturreservat"],["Östra Göinge kommun","Härlövs ängar"],["Östra Göinge kommun","Ingelsträde naturreservat"],["Östra Göinge kommun","Njuröds naturreservat"],
+];
+
+const reservat = DATA.map(([kommun, namn], i) => ({ nr: i + 1, kommun, namn }));
+const kommuner = ["Alla", ...Array.from(new Set(reservat.map(r => r.kommun))).sort()];
+
+// Populate filter
+const sel = document.getElementById("kommunFilter");
+kommuner.forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = k; sel.appendChild(o); });
+
+// Load visited from localStorage
+let visited = {};
+try { visited = JSON.parse(localStorage.getItem("visited_skane") || "{}"); } catch(e) {}
+
+function saveVisited() {
+  try { localStorage.setItem("visited_skane", JSON.stringify(visited)); } catch(e) {}
+}
+
+function render() {
+  const search = document.getElementById("search").value.toLowerCase();
+  const kommun = document.getElementById("kommunFilter").value;
+  const onlyVisited = document.getElementById("showOnlyVisited").checked;
+  const onlyUnvisited = document.getElementById("showOnlyUnvisited").checked;
+
+  const filtered = reservat.filter(r => {
+    if (search && !r.namn.toLowerCase().includes(search) && !r.kommun.toLowerCase().includes(search)) return false;
+    if (kommun !== "Alla" && r.kommun !== kommun) return false;
+    if (onlyVisited && !visited[r.nr]) return false;
+    if (onlyUnvisited && visited[r.nr]) return false;
+    return true;
+  });
+
+  const visitedCount = Object.values(visited).filter(Boolean).length;
+  document.getElementById("subtitle").innerHTML =
+    `${reservat.length} reservat i ${kommuner.length - 1} kommuner &nbsp;·&nbsp; <span>${visitedCount} besökta</span>`;
+  document.getElementById("count").textContent = `Visar ${filtered.length} av ${reservat.length} reservat`;
+
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="no-results">Inga reservat hittades</td></tr>';
+    return;
+  }
+  filtered.forEach(r => {
+    const tr = document.createElement("tr");
+    if (visited[r.nr]) tr.classList.add("visited");
+    tr.innerHTML = `
+      <td class="center"><input type="checkbox" ${visited[r.nr] ? "checked" : ""} onchange="toggle(${r.nr}, this)" /></td>
+      <td class="nr">${r.nr}</td>
+      <td class="namn ${visited[r.nr] ? "struck" : ""}">${r.namn}</td>
+      <td class="kommun">${r.kommun}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function toggle(nr, cb) {
+  visited[nr] = cb.checked;
+  saveVisited();
+  render();
+}
+
+function downloadCSV() {
+  const rows = [["Nr","Namn","Kommun","Besökt"]];
+  reservat.forEach(r => rows.push([r.nr, r.namn, r.kommun, visited[r.nr] ? "Ja" : "Nej"]));
+  const csv = "\uFEFF" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  a.download = "naturreservat_skane.csv";
+  a.click();
+}
+
+render();
+</script>
+</body>
+</html>
