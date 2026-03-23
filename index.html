@@ -102,27 +102,33 @@
   //  🔧 BYTA UT DESSA VÄRDEN mot dina egna från Firebase Console
   // ============================================================
   const firebaseConfig = {
-  	apiKey: "AIzaSyD7CVQPSuTxXs8Bmw3vV6YuIcy5TpQDIvc",
-  	authDomain: "naturreservat.firebaseapp.com",
- 	databaseURL: "https://console.firebase.google.com/project/naturreservat/database/naturreservat-default-rtdb/data/~2F",
-	projectId: "naturreservat",
-  	storageBucket: "naturreservat.firebasestorage.app",
-  	messagingSenderId: "964052674891",
-  	appId: "1:964052674891:web:e59422eef01a7eb6be60ce"
+    apiKey:            "DIN_API_KEY",
+    authDomain:        "DITT_PROJEKT.firebaseapp.com",
+    databaseURL:       "https://DITT_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "DITT_PROJEKT",
+    storageBucket:     "DITT_PROJEKT.appspot.com",
+    messagingSenderId: "DITT_SENDER_ID",
+    appId:             "DITT_APP_ID"
   };
   // ============================================================
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
+  try {
+    document.getElementById("status").textContent = "🔄 Initierar Firebase...";
+    const app = initializeApp(firebaseConfig);
+    document.getElementById("status").textContent = "🔄 Ansluter till databas...";
+    const db = getDatabase(app);
 
-  // Exponera till globalt scope så övrig kod når dem
-  window._firebaseSet = set;
-  window._firebaseRef = (path) => ref(db, path);
-  window._firebaseOnValue = onValue;
-  window._firebaseReady = true;
+    window._firebaseSet = set;
+    window._firebaseRef = (path) => ref(db, path);
+    window._firebaseOnValue = onValue;
+    window._firebaseReady = true;
 
-  // Starta appen när Firebase är redo
-  window.dispatchEvent(new Event("firebase-ready"));
+    document.getElementById("status").textContent = "🔄 Skickar firebase-ready...";
+    window.dispatchEvent(new Event("firebase-ready"));
+    document.getElementById("status").textContent = "🔄 Väntar på data...";
+  } catch(e) {
+    document.getElementById("status").textContent = "❌ Firebase-fel: " + e.message;
+  }
 </script>
 
 <script>
