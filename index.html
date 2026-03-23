@@ -179,10 +179,6 @@ let visited = {};
 // ─── FIREBASE ────────────────────────────────────────────────
 function subscribeFirebase() {
   document.getElementById("status").textContent = "Ansluter...";
-  if (!window._firebaseReady) {
-    window.addEventListener("firebase-ready", () => subscribeFirebase());
-    return;
-  }
   window._firebaseOnValue(window._firebaseRef("visited"), snapshot => {
     visited = snapshot.val() || {};
     document.getElementById("status").textContent = "✅ Ansluten – uppdateras i realtid";
@@ -190,7 +186,8 @@ function subscribeFirebase() {
   });
 }
 
-subscribeFirebase();
+// Vänta på att Firebase-modulen är klar innan vi prenumererar
+window.addEventListener("firebase-ready", () => subscribeFirebase());
 
 window.toggle = function(nr, cb) {
   visited[nr] = cb.checked;
